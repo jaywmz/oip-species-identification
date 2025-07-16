@@ -12,6 +12,7 @@ from transformers import pipeline, AutoImageProcessor
 os.makedirs("data", exist_ok=True)
 conn = sqlite3.connect("submissions.db", check_same_thread=False)
 c = conn.cursor()
+
 # Base table
 c.execute("""
 CREATE TABLE IF NOT EXISTS submissions (
@@ -23,15 +24,12 @@ CREATE TABLE IF NOT EXISTS submissions (
     longitude  REAL
 )
 """)
-# Migrate schema for new columns
+# Schema migration
 c.execute("PRAGMA table_info(submissions)")
 cols = {r[1] for r in c.fetchall()}
-if 'image_path' not in cols:
-    c.execute("ALTER TABLE submissions ADD COLUMN image_path TEXT")
-if 'validated' not in cols:
-    c.execute("ALTER TABLE submissions ADD COLUMN validated INTEGER DEFAULT 0")
-if 'review_comment' not in cols:
-    c.execute("ALTER TABLE submissions ADD COLUMN review_comment TEXT DEFAULT ''")
+if 'image_path' not in cols:      c.execute("ALTER TABLE submissions ADD COLUMN image_path TEXT")
+if 'validated' not in cols:       c.execute("ALTER TABLE submissions ADD COLUMN validated INTEGER DEFAULT 0")
+if 'review_comment' not in cols:  c.execute("ALTER TABLE submissions ADD COLUMN review_comment TEXT DEFAULT ''")
 conn.commit()
 
 # ── MODEL SETUP ───────────────────────────────────────────────────────────────
@@ -49,31 +47,46 @@ classifier = pipeline(
 
 # ── HELPERS ──────────────────────────────────────────────────────────────────
 def get_exif_gps(img: Image.Image):
-    exif = img._getexif()
-    if not exif: return None, None
-    gps = {}
-    for tag, val in exif.items():
-        name = ExifTags.TAGS.get(tag, tag)
-        if name == 'GPSInfo':
-            for t, v in val.items():
-                gps[ExifTags.GPSTAGS.get(t, t)] = v
-    need = {'GPSLatitude','GPSLatitudeRef','GPSLongitude','GPSLongitudeRef'}
-    if not need.issubset(gps): return None, None
-    def to_deg(vals):
-        d = vals[0][0]/vals[0][1]
-        m = vals[1][0]/vals[1][1]
-        s = vals[2][0]/vals[2][1]
-        return d + m/60 + s/3600
-    lat = to_deg(gps['GPSLatitude'])
-    if gps['GPSLatitudeRef'] != 'N': lat = -lat
-    lon = to_deg(gps['GPSLongitude'])
-    if gps['GPSLongitudeRef'] != 'E': lon = -lon
-    return lat, lon
+    try:
+        exif = img._getexif()
+        if not exif:
+            return None, None
+        gps = {}
+        for tag, val in exif.items():
+            name = ExifTags.TAGS.get(tag, tag)
+            if name == 'GPSInfo':
+                for t, v in val.items():
+                    gps[ExifTags.GPSTAGS.get(t, t)] = v
+        need = {'GPSLatitude','GPSLatitudeRef','GPSLongitude','GPSLongitudeRef'}
+        if not need.issubset(gps):
+            return None, None
+        def to_deg(vals):
+            d = vals[0][0]/vals[0][1]
+            m = vals[1][0]/vals[1][1]
+            s = vals[2][0]/vals[2][1]
+            return d + m/60 + s/3600
+        lat = to_deg(gps['GPSLatitude'])
+        lon = to_deg(gps['GPSLongitude'])
+        if gps['GPSLatitudeRef'] != 'N': lat = -lat
+        if gps['GPSLongitudeRef'] != 'E': lon = -lon
+        return lat, lon
+    except Exception:
+        return None, None
 
 def get_id_suggestions(file):
+    """
+    Try the HF model; if it errors (meta-tensor), fall back to a stub.
+    """
     img = Image.open(file).convert("RGB")
-    preds = classifier(img, top_k=1)
-    return preds[0]['label'].replace('_',' '), float(preds[0]['score'])
+    try:
+        preds = classifier(img, top_k=1)
+        return preds[0]['label'].replace('_',' '), float(preds[0]['score'])
+    except NotImplementedError:
+        st.warning("⚠️ Model inference unavailable; using stub prediction.")
+        return "Testus plantus", 0.42
+    except Exception as e:
+        st.error(f"⚠️ Identification error: {e}")
+        return "Unknown", 0.0
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.title("🌱 OIP Species Identification")
@@ -122,7 +135,7 @@ if mode == "Citizen":
 elif mode == "Expert":
     st.markdown("## Expert: Validate Submissions")
     df = pd.read_sql("SELECT * FROM submissions WHERE validated=0 ORDER BY timestamp", conn)
-    valid = df[df['image_path'].apply(lambda p: isinstance(p,str) and os.path.exists(p))]
+    valid = df[df['image_path'].apply(lambda p: isinstance(p, str) and os.path.exists(p))]
     if valid.empty:
         st.info("✅ No pending submissions.")
     else:
@@ -136,28 +149,36 @@ elif mode == "Expert":
                 if col1.button("Approve", key=f"ap{row.id}"):
                     c.execute(
                         "UPDATE submissions SET species=?,validated=1,review_comment=? WHERE id=?",
-                        (new_sp,note,row.id)
-                    ); conn.commit(); st.success("Approved!")
+                        (new_sp, note, row.id)
+                    )
+                    conn.commit()
+                    st.success("Approved!")
                 if col2.button("Reject", key=f"rj{row.id}"):
                     c.execute(
                         "UPDATE submissions SET validated=2,review_comment=? WHERE id=?",
-                        (note,row.id)
-                    ); conn.commit(); st.error("Rejected!")
+                        (note, row.id)
+                    )
+                    conn.commit()
+                    st.error("Rejected!")
                 st.markdown("---")
 
-# — Reports —
+# — Reports + Map —
 else:
-    st.markdown("## Reports: Download & Visualize")
+    st.markdown("## Reports: Download, Visualize & Map")
     reports = pd.read_sql("SELECT * FROM submissions WHERE validated=1", conn)
+
     if reports.empty:
         st.info("ℹ️ No validated sightings yet.")
     else:
+        # CSV export
         csv = reports.to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download CSV", csv, "sightings.csv", "text/csv")
 
+        # Species freq
         st.subheader("Species Frequency")
         st.bar_chart(reports['species'].value_counts())
 
+        # Sightings over time
         st.subheader("Sightings Over Time")
         times = (
             pd.to_datetime(reports['timestamp'])
@@ -166,3 +187,8 @@ else:
               .sort_index()
         )
         st.line_chart(times)
+
+        # Interactive map
+        st.subheader("Sightings Map")
+        map_data = reports[['latitude', 'longitude']].dropna()
+        st.map(map_data)
