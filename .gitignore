@@ -1,0 +1,29 @@
+# Byte-compiled / optimized Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+.env.*
+
+# Streamlit cache & config
+.streamlit/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Data & models (keep these out of Git; use Git LFS or external storage for large files)
+data/
+models/
+
+# pip cache
+pip-wheel-metadata/
