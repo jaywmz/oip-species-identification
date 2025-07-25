@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Species Identification Project - Glasgow Botanic Gardens</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom colors based on iNaturalist scheme */
+        :root {
+            --inat-green-primary: #73AB00;
+            /* Limeade */
+            --inat-green-dark: #2E5B00;
+            /* Verdun Green */
+            --inat-peach-light: #F9C3AB;
+            /* Apricot Peach */
+            --inat-text-dark: #333333;
+            --inat-text-light: #f5f5f5;
+        }
+
+        .bg-inat-green-primary {
+            background-color: var(--inat-green-primary);
+        }
+
+        .text-inat-green-primary {
+            color: var(--inat-green-primary);
+        }
+
+        .border-inat-green-primary {
+            border-color: var(--inat-green-primary);
+        }
+
+        .bg-inat-green-dark {
+            background-color: var(--inat-green-dark);
+        }
+
+        .text-inat-green-dark {
+            color: var(--inat-green-dark);
+        }
+
+        .bg-inat-peach-light {
+            background-color: var(--inat-peach-light);
+        }
+
+        .text-inat-peach-light {
+            color: var(--inat-peach-light);
+        }
+
+        .text-inat-dark {
+            color: var(--inat-text-dark);
+        }
+
+        .text-inat-light {
+            color: var(--inat-text-light);
+        }
+
+        .black-text {
+            color: black;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--inat-text-dark);
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--inat-green-primary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--inat-green-dark);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Header/Hero Section -->
+    <header class="bg-inat-green-primary text-inat-light py-16 px-4 rounded-b-xl shadow-lg">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+                Species Identification Project
+            </h1>
+            <p class="text-xl md:text-2xl font-light">
+                Empowering Citizen Science at Glasgow Botanic Gardens
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto py-12 px-4">
+    </main>
+
+    <footer class="bg-inat-green-dark text-inat-light py-8 px-4 mt-12 rounded-t-xl">
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-2xl font-semibold mb-3">Useful Links</h3>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>
+                        <a href="https://glasgowbotanicgardens.com/" target="_blank"
+                            class="text-blue-600 hover:underline">
+                            Glasgow Botanic Gardens
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.inaturalist.org/projects/city-nature-challenge-2025-greater-glasgow"
+                            target="_blank" class="text-blue-600 hover:underline">
+                            iNaturalist City Nature Challenge 2025 - Greater Glasgow
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://glasgownaturalhistory.org.uk/bio_sites.html" target="_blank"
+                            class="text-blue-600 hover:underline">
+                            Glasgow Natural History Society - Bio Sites
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-2xl font-semibold  mb-3">Contact Person</h3>
+                <p class="mb-2">
+                    <strong>Chrissy Sanachan</strong><br>
+                    Friends of Glasgow Botanic Gardens
+                </p>
+                <p>
+                    Email: <a href="mailto:chrissy@glasgowbotanicgardens.com"
+                        class="text-blue-600 hover:underline">chrissy@glasgowbotanicgardens.com</a>
+                </p>
+            </div>
+        </div>
+
+        <br>
+
+
+        <div class="max-w-4xl mx-auto text-center text-sm">
+            <p>&copy; 2025 Species Identification Project. All rights reserved.</p>
+            <p>Designed with <span class="text-red-400">&hearts;</span> and iNaturalist colors.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
